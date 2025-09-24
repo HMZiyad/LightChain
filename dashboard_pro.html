@@ -1,169 +1,710 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LightChain IoT Dashboard</title>
   <style>
-    body {
+    * {
       margin: 0;
-      background: #0f172a;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
       color: #e2e8f0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: auto;
     }
-    header {
-      background: #1e293b;
-      padding: 20px;
+
+    /* Animated background particles */
+    .bg-animation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .particle {
+      position: absolute;
+      background: rgba(56, 189, 248, 0.1);
+      border-radius: 50%;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .particle:nth-child(1) { width: 80px; height: 80px; top: 20%; left: 10%; animation-delay: 0s; }
+    .particle:nth-child(2) { width: 60px; height: 60px; top: 60%; left: 80%; animation-delay: 2s; }
+    .particle:nth-child(3) { width: 40px; height: 40px; top: 80%; left: 20%; animation-delay: 4s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
+      50% { transform: translateY(-20px) rotate(180deg); opacity: 0.6; }
+    }
+
+    /* Header */
+    .header {
+      background: rgba(30, 41, 59, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+      padding: 1.5rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-icon {
+      width: 3rem;
+      height: 3rem;
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .logo-text h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #38bdf8, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo-text p {
+      font-size: 0.9rem;
+      color: #94a3b8;
+      margin-top: 0.25rem;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .stat-item {
       text-align: center;
-      font-size: 2em;
-      font-weight: bold;
-      color: #38bdf8;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      padding: 0.5rem 1rem;
+      background: rgba(56, 189, 248, 0.1);
+      border-radius: 8px;
+      border: 1px solid rgba(56, 189, 248, 0.2);
     }
+
+    .stat-number {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Main content */
+    .main-content {
+      position: relative;
+      z-index: 1;
+      padding: 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .controls {
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .refresh-btn {
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .refresh-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(56, 189, 248, 0.3);
+    }
+
+    .refresh-btn:active {
+      transform: translateY(0);
+    }
+
+    .filter-tabs {
+      display: flex;
+      background: rgba(30, 41, 59, 0.8);
+      border-radius: 12px;
+      padding: 0.5rem;
+      gap: 0.5rem;
+    }
+
+    .filter-tab {
+      padding: 0.5rem 1rem;
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+
+    .filter-tab.active {
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+      color: white;
+    }
+
+    /* Blockchain container */
+    .blockchain-container {
+      position: relative;
+      padding: 2rem 0;
+    }
+
     .chain {
       display: flex;
       align-items: center;
-      justify-content: start;
+      gap: 3rem;
       overflow-x: auto;
-      padding: 40px;
-      gap: 60px;
-      position: relative;
+      padding: 2rem 1rem;
+      scroll-behavior: smooth;
     }
+
+    /* Custom scrollbar */
+    .chain::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .chain::-webkit-scrollbar-track {
+      background: rgba(30, 41, 59, 0.5);
+      border-radius: 4px;
+    }
+
+    .chain::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+      border-radius: 4px;
+    }
+
+    /* Block styles */
     .block {
-      background: #1e293b;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      min-width: 280px;
-      max-width: 280px;
+      background: rgba(30, 41, 59, 0.8);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 16px;
+      padding: 1.5rem;
+      min-width: 320px;
+      max-width: 320px;
       flex-shrink: 0;
       position: relative;
-      border: 2px solid #38bdf8;
-      transition: transform 0.3s ease;
+      transition: all 0.4s ease;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     }
+
     .block:hover {
-      transform: translateY(-5px);
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 20px 40px rgba(56, 189, 248, 0.2);
+      border-color: rgba(56, 189, 248, 0.6);
     }
-    .block h3 {
-      margin-top: 0;
+
+    .block-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .block-number {
+      font-size: 1.1rem;
+      font-weight: 700;
       color: #38bdf8;
     }
-    .data {
-      font-family: monospace;
-      background: #0f172a;
-      padding: 10px;
-      border-radius: 6px;
-      margin-top: 10px;
-      white-space: pre-wrap;
-      word-break: break-word;
+
+    .block-timestamp {
+      font-size: 0.8rem;
+      color: #94a3b8;
     }
+
+    .block-content {
+      space-y: 1rem;
+    }
+
+    .data-field {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .data-label {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.25rem;
+    }
+
+    .data-value {
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.9rem;
+      color: #e2e8f0;
+      word-break: break-all;
+      line-height: 1.4;
+    }
+
+    /* Status styles */
+    .status-container {
+      margin: 1rem 0;
+    }
+
     .status {
-      margin-top: 10px;
-      font-weight: bold;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
+
     .status.pending {
-      color: #facc15;
+      background: rgba(251, 191, 36, 0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(251, 191, 36, 0.3);
     }
+
     .status.approved {
+      background: rgba(34, 197, 94, 0.2);
       color: #22c55e;
+      border: 1px solid rgba(34, 197, 94, 0.3);
     }
-    .button {
-      margin-top: 15px;
-      padding: 8px 16px;
-      background-color: #38bdf8;
-      color: #0f172a;
+
+    .status-icon {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse-status 2s infinite;
+    }
+
+    .status.pending .status-icon {
+      background: #fbbf24;
+    }
+
+    .status.approved .status-icon {
+      background: #22c55e;
+    }
+
+    @keyframes pulse-status {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Action button */
+    .action-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
       border: none;
-      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
       cursor: pointer;
-      font-weight: bold;
+      transition: all 0.3s ease;
+      margin-top: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
     }
-    .button:hover {
-      background-color: #0ea5e9;
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(34, 197, 94, 0.3);
     }
+
+    .action-btn:disabled {
+      background: rgba(100, 116, 139, 0.5);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Connection lines */
     .connector {
       position: absolute;
       top: 50%;
       height: 2px;
-      background: #38bdf8;
+      background: linear-gradient(90deg, #38bdf8, #06b6d4);
       z-index: 0;
-      transition: width 0.3s ease;
+      transform: translateY(-1px);
+      opacity: 0.6;
+    }
+
+    .connector::before {
+      content: '';
+      position: absolute;
+      right: -6px;
+      top: -2px;
+      width: 6px;
+      height: 6px;
+      background: #38bdf8;
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+    }
+
+    /* Loading state */
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 200px;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(56, 189, 248, 0.3);
+      border-top: 3px solid #38bdf8;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Error state */
+    .error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      color: #ef4444;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .header-content {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .stats-bar {
+        gap: 1rem;
+      }
+
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .block {
+        min-width: 280px;
+        max-width: 280px;
+      }
+
+      .chain {
+        gap: 2rem;
+      }
     }
   </style>
 </head>
 <body>
-  <header>🔗 LightChain IoT Blockchain Dashboard</header>
-  <div class="chain" id="chain"></div>
+  <!-- Background animation -->
+  <div class="bg-animation">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <div class="logo">
+        <div class="logo-icon">🔗</div>
+        <div class="logo-text">
+          <h1>LightChain IoT</h1>
+          <p>Secure Device Management Platform</p>
+        </div>
+      </div>
+      <div class="stats-bar">
+        <div class="stat-item">
+          <div class="stat-number" id="total-blocks">0</div>
+          <div class="stat-label">Total Blocks</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="pending-count">0</div>
+          <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="approved-count">0</div>
+          <div class="stat-label">Approved</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main class="main-content">
+    <div class="controls">
+      <button class="refresh-btn" onclick="loadBlockchain()">
+        <span>🔄</span>
+        Refresh Chain
+      </button>
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="all">All Blocks</button>
+        <button class="filter-tab" data-filter="pending">Pending</button>
+        <button class="filter-tab" data-filter="approved">Approved</button>
+      </div>
+    </div>
+
+    <div class="blockchain-container">
+      <div class="chain" id="chain">
+        <div class="loading">
+          <div class="spinner"></div>
+          <p>Loading blockchain data...</p>
+        </div>
+      </div>
+    </div>
+  </main>
 
   <script>
-  async function loadBlockchain() {
-    try {
-      const response = await fetch('/chain');
-      const data = await response.json();
+    let currentFilter = 'all';
+    let blockchainData = [];
+
+    // Filter functionality
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        e.target.classList.add('active');
+        currentFilter = e.target.dataset.filter;
+        renderBlocks();
+      });
+    });
+
+    function updateStats(chain) {
+      const totalBlocks = chain.filter(block => block.data && block.data !== "Genesis Block").length;
+      const pendingCount = chain.filter(block => block.data && block.data.status === 'pending').length;
+      const approvedCount = chain.filter(block => block.data && block.data.status === 'approved').length;
+
+      document.getElementById('total-blocks').textContent = totalBlocks;
+      document.getElementById('pending-count').textContent = pendingCount;
+      document.getElementById('approved-count').textContent = approvedCount;
+    }
+
+    function formatTimestamp(timestamp) {
+      return new Date(timestamp * 1000).toLocaleString();
+    }
+
+    function createBlockElement(block, index) {
+      const div = document.createElement('div');
+      div.className = 'block';
+      div.dataset.status = block.data.status;
+      
+      const statusClass = block.data.status === 'approved' ? 'approved' : 'pending';
+      const statusIcon = block.data.status === 'approved' ? '✓' : '⏳';
+
+      div.innerHTML = `
+        <div class="block-header">
+          <div class="block-number">Block #${block.index}</div>
+          <div class="block-timestamp">${formatTimestamp(block.timestamp)}</div>
+        </div>
+        <div class="block-content">
+          <div class="data-field">
+            <div class="data-label">Device ID</div>
+            <div class="data-value">${block.data.device_id}</div>
+          </div>
+          <div class="data-field">
+            <div class="data-label">Firmware Hash</div>
+            <div class="data-value">${block.data.firmware_hash}</div>
+          </div>
+          <div class="data-field">
+            <div class="data-label">Block Hash</div>
+            <div class="data-value">${block.hash}</div>
+          </div>
+          <div class="status-container">
+            <div class="status ${statusClass}">
+              <div class="status-icon"></div>
+              ${statusIcon} ${block.data.status}
+            </div>
+          </div>
+          ${block.data.status === 'pending' ? `
+            <button class="action-btn" onclick="approveDevice(${block.index}, this)">
+              <span>✓</span>
+              Approve Device
+            </button>
+          ` : ''}
+        </div>
+      `;
+
+      return div;
+    }
+
+    function renderBlocks() {
       const chainContainer = document.getElementById('chain');
       chainContainer.innerHTML = '';
 
-      const chain = data.chain;
-      for (let i = 0; i < chain.length; i++) {
-        const block = chain[i];
-        if (!block.data || block.data === "Genesis Block") continue;
+      const filteredChain = blockchainData.filter(block => {
+        if (!block.data || block.data === "Genesis Block") return false;
+        if (currentFilter === 'all') return true;
+        return block.data.status === currentFilter;
+      });
 
-        const div = document.createElement('div');
-        div.className = 'block';
-        const statusClass = block.data.status === 'approved' ? 'approved' : 'pending';
+      if (filteredChain.length === 0) {
+        chainContainer.innerHTML = '<p style="text-align: center; color: #94a3b8; font-size: 1.1rem;">No blocks match the current filter.</p>';
+        return;
+      }
 
-        const statusDiv = document.createElement('div');
-        statusDiv.className = 'status ' + statusClass;
-        statusDiv.innerText = `Status: ${block.data.status}`;
+      filteredChain.forEach((block, index) => {
+        const blockElement = createBlockElement(block, index);
+        chainContainer.appendChild(blockElement);
 
-        div.innerHTML = `
-          <h3>Block #${block.index}</h3>
-          <div class="data"><strong>Device ID:</strong> ${block.data.device_id}</div>
-          <div class="data"><strong>Firmware:</strong> ${block.data.firmware_hash}</div>
-          <div class="data"><strong>Hash:</strong> ${block.hash}</div>
-        `;
-        div.appendChild(statusDiv);
-
-        if (block.data.status === 'pending') {
-          const btn = document.createElement('button');
-          btn.className = 'button';
-          btn.textContent = 'Approve Device';
-          btn.onclick = async () => {
-            btn.disabled = true;
-            btn.textContent = 'Approving...';
-            await fetch('/approve/' + block.index, { method: 'POST' });
-            // Update status immediately
-            block.data.status = 'approved';
-            statusDiv.innerText = "Status: approved";
-            statusDiv.className = "status approved";
-            btn.remove(); // remove the button
-          };
-          div.appendChild(btn);
-        }
-
-        chainContainer.appendChild(div);
-
-        // draw connector
-        if (i > 0) {
+        // Add connector line
+        if (index > 0) {
           const connector = document.createElement('div');
           connector.className = 'connector';
-          setTimeout(() => {
-            const prevBlock = chainContainer.children[i - 1];
-            const currBlock = chainContainer.children[i];
-            const left = prevBlock.offsetLeft + prevBlock.offsetWidth;
-            const right = currBlock.offsetLeft;
-            connector.style.left = left + 'px';
-            connector.style.width = (right - left) + 'px';
-          }, 100);
+          connector.style.left = `${blockElement.offsetLeft - 48}px`;
+          connector.style.width = '48px';
           chainContainer.appendChild(connector);
         }
-      }
-    } catch (err) {
-      document.getElementById('chain').innerHTML = "<p style='color:red;'>Failed to load blockchain data.</p>";
+      });
+
+      // Animate blocks in
+      setTimeout(() => {
+        document.querySelectorAll('.block').forEach((block, index) => {
+          block.style.opacity = '0';
+          block.style.transform = 'translateY(20px)';
+          setTimeout(() => {
+            block.style.transition = 'all 0.6s ease';
+            block.style.opacity = '1';
+            block.style.transform = 'translateY(0)';
+          }, index * 100);
+        });
+      }, 50);
     }
-  }
 
-  loadBlockchain();
-</script>
+    async function loadBlockchain() {
+      const chainContainer = document.getElementById('chain');
+      chainContainer.innerHTML = `
+        <div class="loading">
+          <div class="spinner"></div>
+          <p>Loading blockchain data...</p>
+        </div>
+      `;
 
+      try {
+        const response = await fetch('/chain');
+        if (!response.ok) throw new Error('Failed to fetch blockchain data');
+        
+        const data = await response.json();
+        blockchainData = data.chain;
+        updateStats(blockchainData);
+        renderBlocks();
+      } catch (err) {
+        console.error('Error loading blockchain:', err);
+        chainContainer.innerHTML = `
+          <div class="error">
+            <h3>⚠️ Connection Error</h3>
+            <p>Unable to load blockchain data. Please check your connection and try again.</p>
+            <button class="refresh-btn" onclick="loadBlockchain()" style="margin-top: 1rem;">
+              <span>🔄</span>
+              Retry
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    async function approveDevice(blockIndex, buttonElement) {
+      const originalText = buttonElement.innerHTML;
+      buttonElement.disabled = true;
+      buttonElement.innerHTML = '<span>⏳</span> Approving...';
+
+      try {
+        const response = await fetch(`/approve/${blockIndex}`, { method: 'POST' });
+        if (!response.ok) throw new Error('Approval failed');
+
+        // Update the block data
+        const block = blockchainData.find(b => b.index === blockIndex);
+        if (block) {
+          block.data.status = 'approved';
+          updateStats(blockchainData);
+          
+          // Update the block element
+          const blockElement = buttonElement.closest('.block');
+          const statusElement = blockElement.querySelector('.status');
+          statusElement.className = 'status approved';
+          statusElement.innerHTML = '<div class="status-icon"></div>✓ approved';
+          
+          buttonElement.remove();
+          
+          // Show success animation
+          blockElement.style.transform = 'scale(1.05)';
+          setTimeout(() => {
+            blockElement.style.transform = '';
+          }, 200);
+        }
+      } catch (err) {
+        console.error('Error approving device:', err);
+        buttonElement.disabled = false;
+        buttonElement.innerHTML = originalText;
+        alert('Failed to approve device. Please try again.');
+      }
+    }
+
+    // Auto-refresh every 30 seconds
+    setInterval(loadBlockchain, 30000);
+
+    // Load initial data
+    loadBlockchain();
+  </script>
 </body>
 </html>
