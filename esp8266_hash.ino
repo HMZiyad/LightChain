@@ -1,61 +1,60 @@
-#include <WiFi.h>
-#include <HTTPClient.h>
-#include "mbedtls/sha256.h"
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+#include <bearssl/bearssl.h>
 
 // WiFi credentials
-const char* ssid = "AUSTSat";
-const char* password = "@austsat456";
+const char* ssid = "Ziyad";
+const char* password = "hawlader123";
 
 // Flask server endpoint
-const char* serverUrl = "http://192.168.1.2:5000/join";
+const char* serverUrl = "http://192.168.1.102:5000/join";
 
 // Device identity
-String device_id = "esp32-DEVICE-001";
+String device_id = "esp8266-DEVICE-003";
 
-// Function to calculate SHA256 firmware hash using mbedTLS
+// Function to calculate SHA256 firmware hash using BearSSL
 String getFirmwareHash() {
   uint32_t sketchSize = ESP.getSketchSize();
   uint8_t buffer[512];
-  mbedtls_sha256_context ctx;
-  uint8_t hash[32];
-
-  mbedtls_sha256_init(&ctx);
-  mbedtls_sha256_starts_ret(&ctx, 0); // 0 for SHA-256
+  br_sha256_context ctx;
+  br_sha256_init(&ctx);
 
   for (uint32_t offset = 0; offset < sketchSize; offset += sizeof(buffer)) {
     uint32_t len = min(sizeof(buffer), sketchSize - offset);
-    memcpy_P(buffer, (const void*)(ESP.getSketchStart() + offset), len);
-    mbedtls_sha256_update_ret(&ctx, buffer, len);
+    ESP.flashRead(ESP.getSketchSize() + offset, (uint32_t*)buffer, len);
+    br_sha256_update(&ctx, buffer, len);
   }
 
-  mbedtls_sha256_finish_ret(&ctx, hash);
-  mbedtls_sha256_free(&ctx);
+  unsigned char out[32];
+  br_sha256_out(&ctx, out);
 
-  String hashStr = "";
+  String hash = "";
   for (int i = 0; i < 32; ++i) {
-    if (hash[i] < 0x10) hashStr += "0";
-    hashStr += String(hash[i], HEX);
+    if (out[i] < 0x10) hash += "0";
+    hash += String(out[i], HEX);
   }
-  return hashStr;
+  return hash;
 }
+
 
 void setup() {
   Serial.begin(115200);
   WiFi.begin(ssid, password);
-  Serial.print("🔌 Connecting to WiFi");
+  Serial.print("🔌 Connecting WiFi");
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
 
-  Serial.println("\n✅ Connected to WiFi");
+  Serial.println("\\n✅ Connected to WiFi");
 
   String firmware_hash = getFirmwareHash();
   Serial.println("🔍 Firmware SHA256 Hash: " + firmware_hash);
 
+  WiFiClient client;
   HTTPClient http;
-  http.begin(serverUrl);
+  http.begin(client, serverUrl);
   http.addHeader("Content-Type", "application/json");
 
   String json = "{\"device_id\": \"" + device_id + "\", \"firmware_hash\": \"" + firmware_hash + "\"}";
